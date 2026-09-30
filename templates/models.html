@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Model Comparison</h1>
+<p class="sub">All models evaluated on a held-out, stratified 20% test set ({{ meta.n_rows_clean }} unique patients total) with 5-fold cross-validation on the training data.</p>
+<div class="card scroll"><table>
+<thead><tr><th>Model</th><th>Accuracy</th><th>Precision</th><th>Recall</th><th>F1</th><th>ROC-AUC</th><th>CV AUC (±std)</th></tr></thead>
+<tbody>{% for n,r in meta.results.items() %}
+<tr class="{{ 'best' if n==meta.best_model }}"><td>{{ n }}{{ ' ★' if n==meta.best_model }}</td>
+<td>{{ '%.1f'|format(r.accuracy*100) }}%</td><td>{{ '%.1f'|format(r.precision*100) }}%</td><td>{{ '%.1f'|format(r.recall*100) }}%</td>
+<td>{{ '%.3f'|format(r.f1) }}</td><td>{{ '%.3f'|format(r.roc_auc) }}</td><td>{{ '%.3f'|format(r.cv_auc_mean) }} ± {{ '%.3f'|format(r.cv_auc_std) }}</td></tr>{% endfor %}</tbody></table></div>
+<div class="grid g2 mt">
+  <div class="card"><h2>Metrics comparison</h2><div class="chart-box"><canvas id="cMetrics"></canvas></div></div>
+  <div class="card"><h2>ROC curves</h2><div class="chart-box"><canvas id="cRoc"></canvas></div></div>
+</div>
+<div class="card mt"><h2>Confusion matrix</h2>
+  <select id="cmSel" style="max-width:260px">{% for n in meta.results %}<option {{ 'selected' if n==meta.best_model }}>{{ n }}</option>{% endfor %}</select>
+  <div id="cm" class="grid g2 mt" style="max-width:360px"></div>
+  <p class="sub" style="margin-top:10px;font-size:.85rem">In medical screening, <b>recall</b> (catching real cases) matters most – false negatives are the costliest error.</p></div>
+<div class="card mt"><h2>Note on the original notebook</h2>
+<p style="font-size:.9rem">The raw CSV holds {{ meta.n_rows_raw }} rows but only <b>{{ meta.n_rows_clean }}</b> are unique. Duplicates leak between train and test sets and inflate accuracy (the notebook's near-100% Random Forest score is a symptom). This app removes them and evaluates honestly, so numbers look lower but are realistic.</p><p style="font-size:.9rem">Labels: the app uses the <code>target</code> column {% if meta.invert_target %}<b>inverted</b> (1 = disease present in the clinical sense){% else %}exactly as stored in the CSV (a prediction of 1 means <code>target = 1</code>){% endif %}. See <code>config.py</code> to change this.</p></div>
+{% endblock %}
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script>
+const M={{ meta.results|tojson }}, ROC={{ meta.roc|tojson }};
+Chart.defaults.color=getComputedStyle(document.body).color; Chart.defaults.borderColor='rgba(128,128,128,.2)';
+const pal=['#d6293e','#7b1fa2','#0d6efd','#198754','#e0a100','#fd7e14','#20c997'];
+const names=Object.keys(M), keys=['accuracy','precision','recall','f1','roc_auc'];
+new Chart('cMetrics',{type:'bar',data:{labels:names,datasets:keys.map((k,i)=>({label:k,data:names.map(n=>M[n][k]),backgroundColor:pal[i]}))},options:{maintainAspectRatio:false,scales:{y:{min:0.5,max:1}}}});
+new Chart('cRoc',{type:'line',data:{datasets:[...names.map((n,i)=>({label:n+' ('+M[n].roc_auc.toFixed(2)+')',data:ROC[n].fpr.map((x,j)=>({x,y:ROC[n].tpr[j]})),borderColor:pal[i],pointRadius:0,tension:.2})),
+ {label:'Chance',data:[{x:0,y:0},{x:1,y:1}],borderColor:'#888',borderDash:[5,5],pointRadius:0}]},
+ options:{maintainAspectRatio:false,parsing:false,scales:{x:{type:'linear',min:0,max:1,title:{display:true,text:'False positive rate'}},y:{min:0,max:1,title:{display:true,text:'True positive rate'}}}}});
+function cm(){const c=M[document.getElementById('cmSel').value].confusion;
+ const cell=(v,l,bg)=>`<div class="card stat" style="background:${bg};padding:14px"><b style="color:var(--text)">${v}</b><span>${l}</span></div>`;
+ document.getElementById('cm').innerHTML=cell(c.tn,'True negative','rgba(25,135,84,.15)')+cell(c.fp,'False positive','rgba(224,161,0,.15)')+cell(c.fn,'False negative','rgba(220,53,69,.18)')+cell(c.tp,'True positive','rgba(25,135,84,.15)');}
+document.getElementById('cmSel').onchange=cm; cm();
+</script>
+{% endblock %}

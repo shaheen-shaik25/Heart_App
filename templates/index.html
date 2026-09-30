@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Heart Disease Risk Prediction</h1>
+<p class="sub">Enter clinical parameters to estimate cardiovascular risk with machine learning.</p>
+<div class="split">
+  <form id="form" class="card" autocomplete="off">
+    <div class="row" style="justify-content:space-between;margin-bottom:12px">
+      <h2 style="margin:0">Patient details</h2>
+      <div class="row">
+        <button type="button" class="btn ghost sm" id="sampleLow">Sample: low risk</button>
+        <button type="button" class="btn ghost sm" id="sampleHigh">Sample: high risk</button>
+      </div>
+    </div>
+    <div class="fields" style="margin-bottom:14px">
+      <div><label>Patient name <small>(optional)</small></label><input name="patient" placeholder="e.g. John Doe" maxlength="60"></div>
+      <div><label>Model</label>
+        <select name="model">{% for m in models %}<option value="{{ m }}" {{ 'selected' if m==best }}>{{ m }}{{ ' ★ best' if m==best }}</option>{% endfor %}</select></div>
+    </div>
+    <div class="fields">
+    {% for f in features %}{% set m = meta[f] %}
+      <div>
+        <label for="{{ f }}">{{ m.label }} {% if m.unit %}<small>({{ m.unit }})</small>{% endif %}</label>
+        {% if m.type=='select' %}
+          <select id="{{ f }}" name="{{ f }}" title="{{ m.help }}">
+            {% for k,v in m.options.items() %}<option value="{{ k }}" {{ 'selected' if k==m.default }}>{{ v }}</option>{% endfor %}
+          </select>
+        {% else %}
+          <input id="{{ f }}" name="{{ f }}" type="number" min="{{ m.min }}" max="{{ m.max }}" step="{{ m.step }}" value="{{ m.default }}" title="{{ m.help }}">
+        {% endif %}
+        <div class="errmsg" id="err_{{ f }}"></div>
+      </div>
+    {% endfor %}
+    </div>
+    <div class="row mt"><button class="btn" type="submit">🔍 Analyse risk</button><button class="btn ghost" type="reset" id="reset">Reset</button></div>
+  </form>
+
+  <div id="result" class="grid">
+    <div class="card placeholder" id="placeholder">
+      <div style="font-size:3rem">🫀</div><p>Fill in the form and press <b>Analyse risk</b> to see the prediction, explanation and recommendations.</p>
+    </div>
+    <div id="output" class="hidden grid">
+      <div class="card gauge-wrap">
+        <svg viewBox="0 0 200 120" id="gauge">
+          <path d="M20 100 A80 80 0 0 1 180 100" fill="none" stroke="var(--border)" stroke-width="16" stroke-linecap="round"/>
+          <path id="arc" d="M20 100 A80 80 0 0 1 180 100" fill="none" stroke="var(--success)" stroke-width="16" stroke-linecap="round" stroke-dasharray="251" stroke-dashoffset="251" style="transition:all .8s"/>
+          <text id="pct" x="100" y="92" text-anchor="middle" font-size="32" font-weight="800" fill="currentColor">0%</text>
+          <text x="100" y="112" text-anchor="middle" font-size="9" fill="var(--muted)">estimated risk</text>
+        </svg>
+        <span class="badge" id="riskBadge"></span>
+        <p id="riskLabel" style="margin:8px 0 4px;font-weight:600"></p>
+        <div class="consensus" id="consensus" style="justify-content:center"></div>
+        <div class="row mt" style="justify-content:center"><a class="btn sm" id="pdf" target="_blank">📄 PDF report</a></div>
+      </div>
+      <div class="card"><h2>Why this result?</h2><p class="sub" style="margin-bottom:8px;font-size:.8rem">Red pushes risk up, green pushes it down (vs. typical values).</p><div id="explain"></div></div>
+      <div class="card"><h2>What-if simulator</h2><p class="sub" style="margin-bottom:8px;font-size:.8rem">Adjust modifiable factors to see how risk would change.</p><div id="whatif"></div></div>
+      <div class="card"><h2>Recommendations</h2><div id="advice"></div></div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}<script>window.SAMPLES = {{ samples|tojson }};</script><script src="{{ url_for('static', filename='js/predict.js') }}"></script>{% endblock %}

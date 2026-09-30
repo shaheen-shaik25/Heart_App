@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Batch Prediction</h1><p class="sub">Upload a CSV with many patients and download the scored file.</p>
+{% if error %}<div class="alert">❌ {{ error }}</div>{% endif %}
+<form class="card" method="post" enctype="multipart/form-data">
+  <div class="drop"><p><b>Choose a CSV file</b> with these columns:</p>
+  <p style="font-size:.8rem;color:var(--muted)">{{ features|join(', ') }}</p>
+  <input type="file" name="file" accept=".csv" required style="max-width:340px"></div>
+  <div class="row mt"><select name="model" style="max-width:260px">{% for m in models %}<option {{ 'selected' if m==best }}>{{ m }}</option>{% endfor %}</select>
+  <button class="btn">Run predictions</button><a class="btn ghost" href="{{ url_for('batch_template') }}">⬇ Sample template</a></div>
+</form>
+{% if results %}
+<div class="grid g4 mt">
+  <div class="card stat"><b>{{ results.n }}</b><span>Patients scored</span></div>
+  {% for lvl,c in [('Low','success'),('Moderate','warning'),('High','danger')] %}
+  <div class="card stat"><b>{{ results.summary.get(lvl,0) }}</b><span>{{ lvl }} risk</span></div>{% endfor %}
+</div>
+<div class="card mt"><div class="row" style="justify-content:space-between"><h2>Results ({{ results.model }}){% if results.n>200 %} – first 200 shown{% endif %}</h2>
+<a class="btn sm" href="{{ url_for('batch_download') }}">⬇ Download full CSV</a></div>
+<div class="scroll"><table><thead><tr>{% for c in results.cols %}<th>{{ c }}</th>{% endfor %}</tr></thead><tbody>
+{% for r in results.rows %}<tr>{% for c in results.cols %}<td>{{ r[c] }}</td>{% endfor %}</tr>{% endfor %}</tbody></table></div></div>
+{% endif %}
+{% endblock %}

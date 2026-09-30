@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{% block title %}CardioCheck{% endblock %} · Heart Disease Prediction</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+<script>document.documentElement.dataset.theme=localStorage.getItem('theme')||'light'</script>
+</head>
+<body>
+<nav>
+  <a class="logo" href="/">❤️ Cardio<span>Check</span></a>
+  {% set ep = request.endpoint %}
+  <a class="link {{ 'active' if ep=='index' }}" href="{{ url_for('index') }}">Predict</a>
+  <a class="link {{ 'active' if ep=='batch' }}" href="{{ url_for('batch') }}">Batch</a>
+  <a class="link {{ 'active' if ep=='dashboard' }}" href="{{ url_for('dashboard') }}">Insights</a>
+  <a class="link {{ 'active' if ep=='models_page' }}" href="{{ url_for('models_page') }}">Models</a>
+  <a class="link {{ 'active' if ep=='history' }}" href="{{ url_for('history') }}">History</a>
+  <a class="link {{ 'active' if ep=='about' }}" href="{{ url_for('about') }}">About</a>
+  <button class="icon-btn" id="theme" title="Toggle theme">🌓</button>
+</nav>
+<main>
+  <div class="disclaimer">⚠️ {{ disclaimer }}</div>
+  {% block content %}{% endblock %}
+</main>
+<footer>© {{ year }} CardioCheck · Built with Flask &amp; scikit-learn</footer>
+<script>
+document.getElementById('theme').onclick=()=>{const t=document.documentElement.dataset.theme==='dark'?'light':'dark';
+document.documentElement.dataset.theme=t;localStorage.setItem('theme',t);location.reload()}
+</script>
+{% block scripts %}{% endblock %}
+</body></html>

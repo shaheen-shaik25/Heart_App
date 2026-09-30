@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="row" style="justify-content:space-between"><div><h1>Prediction History</h1><p class="sub">Last 200 saved predictions (stored locally in SQLite).</p></div>
+{% if rows %}<a class="btn ghost" href="{{ url_for('export_history') }}">⬇ Export CSV</a>{% endif %}</div>
+<div class="card scroll">
+{% if rows %}<table><thead><tr><th>#</th><th>Date</th><th>Patient</th><th>Model</th><th>Risk %</th><th>Level</th><th></th></tr></thead><tbody>
+{% for r in rows %}<tr><td>{{ r.id }}</td><td>{{ r.created }}</td><td>{{ r.patient }}</td><td>{{ r.model }}</td>
+<td><b>{{ '%.1f'|format(r.probability*100) }}%</b></td><td><span class="badge {{ r.color }}">{{ r.risk }}</span></td>
+<td class="row"><a class="btn ghost sm" href="{{ url_for('report', pid=r.id) }}" target="_blank">PDF</a>
+<form method="post" action="{{ url_for('delete_record', pid=r.id) }}" onsubmit="return confirm('Delete this record?')"><button class="btn danger sm">Delete</button></form></td></tr>{% endfor %}
+</tbody></table>
+{% else %}<div class="placeholder">No predictions yet. <a href="{{ url_for('index') }}">Make your first prediction →</a></div>{% endif %}
+</div>
+{% endblock %}

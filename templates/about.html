@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>About CardioCheck</h1><p class="sub">An advanced version of the original Heart Disease notebook, turned into a full web application.</p>
+<div class="grid g2">
+<div class="card"><h2>Features</h2><ul>
+<li>Live risk prediction with a probability gauge and Low / Moderate / High bands</li>
+<li>7 models: Logistic Regression, SVM, Random Forest, Decision Tree, Gradient Boosting, KNN and a voting ensemble</li>
+<li>Per-patient explanation of which values raise or lower the risk</li>
+<li>What-if simulator, model consensus, personalised lifestyle tips</li>
+<li>Batch CSV scoring, prediction history, CSV export, PDF reports</li>
+<li>Interactive data insights and model comparison (ROC, confusion matrix)</li>
+<li>REST API, dark mode, input validation</li>
+</ul></div>
+<div class="card"><h2>REST API</h2>
+<p style="font-size:.88rem"><code>POST /api/predict</code> with JSON:</p>
+<pre style="background:var(--bg);padding:12px;border-radius:8px;overflow:auto;font-size:.78rem">curl -X POST http://127.0.0.1:5000/api/predict \
+ -H "Content-Type: application/json" \
+ -d '{"age":63,"sex":1,"cp":0,"trestbps":150,"chol":290,
+      "fbs":1,"restecg":0,"thalach":110,"exang":1,
+      "oldpeak":3.2,"slope":1,"ca":2,"thal":3}'</pre>
+<p style="font-size:.88rem"><code>GET /api/models</code> returns the evaluation metrics.</p></div>
+<div class="card"><h2>Pipeline</h2><ol><li>Remove duplicate rows ({{ meta.n_rows_raw }} → {{ meta.n_rows_clean }})</li><li>Scale numeric features, one-hot encode categoricals (inside a Pipeline)</li><li>Stratified split + 5-fold CV grid search</li><li>Select best model by cross-validated ROC-AUC (<b>{{ meta.best_model }}</b>)</li><li>Refit on all data and serve</li></ol></div>
+<div class="card"><h2>Disclaimer</h2><p>{{ disclaimer }}</p></div>
+</div>
+{% endblock %}
